@@ -14,7 +14,7 @@ __thread EventLoop* t_loopInThisThread = 0;
 int createEventfd() {
   int evtfd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
   if (evtfd < 0) {
-    LOG << "Failed in eventfd";
+    // LOG << "Failed in eventfd";
     abort();
   }
   return evtfd;
@@ -30,7 +30,7 @@ EventLoop::EventLoop()
       threadId_(CurrentThread::tid()),
       pwakeupChannel_(new Channel(this, wakeupFd_)) {
   if (t_loopInThisThread) {
-    // LOG << "Another EventLoop " << t_loopInThisThread << " exists in this
+    // // LOG << "Another EventLoop " << t_loopInThisThread << " exists in this
     // thread " << threadId_;
   } else {
     t_loopInThisThread = this;
@@ -59,7 +59,7 @@ void EventLoop::wakeup() {
   uint64_t one = 1;
   ssize_t n = writen(wakeupFd_, (char*)(&one), sizeof one);
   if (n != sizeof one) {
-    LOG << "EventLoop::wakeup() writes " << n << " bytes instead of 8";
+    // LOG << "EventLoop::wakeup() writes " << n << " bytes instead of 8";
   }
 }
 
@@ -67,7 +67,7 @@ void EventLoop::handleRead() {
   uint64_t one = 1;
   ssize_t n = readn(wakeupFd_, &one, sizeof one);
   if (n != sizeof one) {
-    LOG << "EventLoop::handleRead() reads " << n << " bytes instead of 8";
+    // LOG << "EventLoop::handleRead() reads " << n << " bytes instead of 8";
   }
   // pwakeupChannel_->setEvents(EPOLLIN | EPOLLET | EPOLLONESHOT);
   pwakeupChannel_->setEvents(EPOLLIN | EPOLLET);

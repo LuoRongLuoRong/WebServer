@@ -1,6 +1,7 @@
 // @Author Lin Ya
 // @Email xxbbb@vip.qq.com
 #pragma once
+#include <stdio.h>
 #include <cstdlib>
 #include <string>
 

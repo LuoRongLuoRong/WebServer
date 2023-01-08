@@ -115,6 +115,7 @@ HttpData::HttpData(EventLoop *loop, int connfd)
       fd_(connfd),
       error_(false),
       connectionState_(H_CONNECTED),
+      fp(fopen("log.txt", "a")), /* 追加写 */
       method_(METHOD_GET),
       HTTPVersion_(HTTP_11),
       nowReadPos_(0),
@@ -125,6 +126,8 @@ HttpData::HttpData(EventLoop *loop, int connfd)
   channel_->setReadHandler(bind(&HttpData::handleRead, this));
   channel_->setWriteHandler(bind(&HttpData::handleWrite, this));
   channel_->setConnHandler(bind(&HttpData::handleConn, this));
+  fprintf(fp, "connectionState_ = %d\n", connectionState_);
+  fflush(fp);
 }
 
 void HttpData::reset() {
@@ -157,7 +160,7 @@ void HttpData::handleRead() {
   do {
     bool zero = false;
     int read_num = readn(fd_, inBuffer_, zero);
-    LOG << "Request: " << inBuffer_;
+    // LOG << "Request: " << inBuffer_;
     if (connectionState_ == H_DISCONNECTING) {
       inBuffer_.clear();
       break;
@@ -180,6 +183,7 @@ void HttpData::handleRead() {
       // 最可能是对端已经关闭了，统一按照对端已经关闭处理
       // error_ = true;
       connectionState_ = H_DISCONNECTING;
+      fprintf(fp, "connectionState_ = %d\n", connectionState_);
       if (read_num == 0) {
         // error_ = true;
         break;
@@ -189,20 +193,23 @@ void HttpData::handleRead() {
 
     if (state_ == STATE_PARSE_URI) {
       URIState flag = this->parseURI();
+      fprintf(fp, "flag = %d\n", flag);
       if (flag == PARSE_URI_AGAIN)
         break;
       else if (flag == PARSE_URI_ERROR) {
         perror("2");
-        LOG << "FD = " << fd_ << "," << inBuffer_ << "******";
+        // LOG << "FD = " << fd_ << "," << inBuffer_ << "******";
         inBuffer_.clear();
         error_ = true;
         handleError(fd_, 400, "Bad Request");
         break;
-      } else
+      } else {
         state_ = STATE_PARSE_HEADERS;
+      }
     }
     if (state_ == STATE_PARSE_HEADERS) {
       HeaderState flag = this->parseHeaders();
+      fprintf(fp, "flag = %d\n", flag);
       if (flag == PARSE_HEADER_AGAIN)
         break;
       else if (flag == PARSE_HEADER_ERROR) {
@@ -233,6 +240,7 @@ void HttpData::handleRead() {
     }
     if (state_ == STATE_ANALYSIS) {
       AnalysisState flag = this->analysisRequest();
+      fprintf(fp, "flag = %d\n", flag);
       if (flag == ANALYSIS_SUCCESS) {
         state_ = STATE_FINISH;
         break;
@@ -606,6 +614,7 @@ void HttpData::handleError(int fd, int err_num, string short_msg) {
 
 void HttpData::handleClose() {
   connectionState_ = H_DISCONNECTED;
+  fprintf(fp, "connectionState_ = %d\n", connectionState_);
   shared_ptr<HttpData> guard(shared_from_this());
   loop_->removeFromPoller(channel_);
 }

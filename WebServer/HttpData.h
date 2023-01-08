@@ -1,6 +1,7 @@
 // @Author Lin Ya
 // @Email xxbbb@vip.qq.com
 #pragma once
+#include <stdio.h>
 #include <sys/epoll.h>
 #include <unistd.h>
 #include <functional>
@@ -92,6 +93,7 @@ class HttpData : public std::enable_shared_from_this<HttpData> {
   std::string outBuffer_;
   bool error_;
   ConnectionState connectionState_;
+  FILE* fp;
 
   HttpMethod method_;
   HttpVersion HTTPVersion_;

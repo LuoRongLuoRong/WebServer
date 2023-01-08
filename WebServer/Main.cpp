@@ -37,10 +37,11 @@ int main(int argc, char *argv[]) {
         break;
     }
   }
-  Logger::setLogFileName(logPath);
+  // Logger::setLogFileName(logPath);
 // STL库在多线程上应用
 #ifndef _PTHREADS
-  LOG << "_PTHREADS is not defined !";
+  // LOG << "_PTHREADS is not defined !";
+  int doNothing;  // 不知道该在这儿补充什么
 #endif
   EventLoop mainLoop;
   Server myHTTPServer(&mainLoop, threadNum, port);

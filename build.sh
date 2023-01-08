@@ -13,6 +13,4 @@ mkdir -p $BUILD_DIR/$BUILD_TYPE \
             $SOURCE_DIR \
     && make $*
 
-# cd $SOURCE_DIR
-# ./build/Debug/WebServer/WebServer -t 10 -p 8881 -l /home/fdse/luorong/LLVM/test/test_project/WebServer/WebServer.log
 
