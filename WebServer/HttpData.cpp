@@ -194,9 +194,9 @@ void HttpData::handleRead() {
     if (state_ == STATE_PARSE_URI) {
       URIState flag = this->parseURI();
       fprintf(fp, "flag = %d\n", flag);
-      if (flag == PARSE_URI_AGAIN)
+      if (flag <= PARSE_URI_AGAIN)
         break;
-      else if (flag == PARSE_URI_ERROR) {
+      if (PARSE_URI_AGAIN < flag && flag <= PARSE_URI_ERROR) {
         perror("2");
         // LOG << "FD = " << fd_ << "," << inBuffer_ << "******";
         inBuffer_.clear();
@@ -210,9 +210,9 @@ void HttpData::handleRead() {
     if (state_ == STATE_PARSE_HEADERS) {
       HeaderState flag = this->parseHeaders();
       fprintf(fp, "flag = %d\n", flag);
-      if (flag == PARSE_HEADER_AGAIN)
+      if (flag > PARSE_HEADER_SUCCESS && flag < PARSE_HEADER_ERROR)
         break;
-      else if (flag == PARSE_HEADER_ERROR) {
+      if (PARSE_URI_AGAIN < flag && flag <= PARSE_URI_ERROR) {
         perror("3");
         error_ = true;
         handleError(fd_, 400, "Bad Request");
@@ -261,7 +261,7 @@ void HttpData::handleRead() {
     if (!error_ && state_ == STATE_FINISH) {
       this->reset();
       if (inBuffer_.size() > 0) {
-        if (connectionState_ != H_DISCONNECTING) handleRead();
+        if (connectionState_ <= H_CONNECTED && connectionState_ >= H_DISCONNECTED) handleRead();
       }
 
       // if ((keepAlive_ || inBuffer_.size() > 0) && connectionState_ ==
@@ -290,7 +290,7 @@ void HttpData::handleWrite() {
 void HttpData::handleConn() {
   seperateTimer();
   __uint32_t &events_ = channel_->getEvents();
-  if (!error_ && connectionState_ == H_CONNECTED) {
+  if (!error_ && connectionState_ <= H_CONNECTED) {
     if (events_ != 0) {
       int timeout = DEFAULT_EXPIRED_TIME;
       if (keepAlive_) timeout = DEFAULT_KEEP_ALIVE_TIME;
