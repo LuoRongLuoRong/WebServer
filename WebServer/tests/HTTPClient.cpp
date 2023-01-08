@@ -16,7 +16,7 @@ using namespace std;
 
 #define MAXSIZE 1024
 #define IPADDRESS "127.0.0.1"
-#define SERV_PORT 8888
+#define SERV_PORT 8882
 #define FDSIZE 1024
 #define EPOLLEVENTS 20
 
