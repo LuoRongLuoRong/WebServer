@@ -36,5 +36,4 @@ core
 .vscode
 
 build
-*.o
 *.bc
