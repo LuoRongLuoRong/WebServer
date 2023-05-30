@@ -128,7 +128,8 @@ HttpData::HttpData(EventLoop *loop, int connfd)
   channel_->setReadHandler(bind(&HttpData::handleRead, this));
   channel_->setWriteHandler(bind(&HttpData::handleWrite, this));
   channel_->setConnHandler(bind(&HttpData::handleConn, this));
-  fprintf(fp, "connectionState_ = %d\n", connectionState_);
+  time_t currentTime = time(NULL); 
+  fprintf(fp, "%s connectionState_ = %d\n",  ctime(&currentTime), connectionState_);
   fflush(fp);
 }
 
@@ -138,8 +139,16 @@ void HttpData::reset() {
   path_.clear();
   nowReadPos_ = 0;
   sctrl = 2;
+  time_t currentTime = time(NULL);
+  fprintf(fp, "%s sctrl = %d\n",  ctime(&currentTime), sctrl);
+  fflush(fp); 
   state_ = STATE_PARSE_URI;
+
   hctrl = 0;
+  currentTime = time(NULL);
+  fprintf(fp, "%s hctrl = %d\n",  ctime(&currentTime), hctrl);
+  fflush(fp); 
+
   hState_ = H_START;
   headers_.clear();
   // keepAlive_ = false;
@@ -187,7 +196,8 @@ void HttpData::handleRead() {
       // 最可能是对端已经关闭了，统一按照对端已经关闭处理
       // error_ = true;
       connectionState_ = H_DISCONNECTING;
-      fprintf(fp, "connectionState_ = %d\n", connectionState_);
+      time_t currentTime = time(NULL); 
+      fprintf(fp, "%s connectionState_ = %d\n",  ctime(&currentTime), connectionState_);
       fflush(fp);
       if (read_num == 0) {
         // error_ = true;
@@ -198,7 +208,9 @@ void HttpData::handleRead() {
 
     if (state_ == STATE_PARSE_URI) {
       URIState flag = this->parseURI();
-      fprintf(fp, "flag = %d\n", flag);
+      time_t currentTime = time(NULL); 
+      fprintf(fp, "%s flag = %d\n",  ctime(&currentTime), flag);
+      fprintf(fp, "%s error_ = %d\n",  ctime(&currentTime), error_);
       fflush(fp);
       if (flag <= PARSE_URI_AGAIN)
         break;
@@ -211,12 +223,16 @@ void HttpData::handleRead() {
         break;
       } else {
         sctrl = 3;
+        time_t currentTime = time(NULL);
+        fprintf(fp, "%s sctrl = %d\n",  ctime(&currentTime), sctrl);
+        fflush(fp); 
         state_ = STATE_PARSE_HEADERS;
       }
     }
     if (state_ == STATE_PARSE_HEADERS) {
       HeaderState flag = this->parseHeaders();
-      fprintf(fp, "flag = %d\n", flag);
+      time_t currentTime = time(NULL); 
+      fprintf(fp, "%s flag = %d\n", ctime(&currentTime), flag); 
       fflush(fp);
       if (flag > PARSE_HEADER_SUCCESS && flag < PARSE_HEADER_ERROR)
         break;
@@ -229,9 +245,15 @@ void HttpData::handleRead() {
       if (method_ == METHOD_POST) {
         // POST方法准备
         sctrl = 4;
+        time_t currentTime = time(NULL);
+        fprintf(fp, "%s sctrl = %d\n",  ctime(&currentTime), sctrl);
+        fflush(fp); 
         state_ = STATE_RECV_BODY;
       } else {
         sctrl = 5;
+        time_t currentTime = time(NULL);
+        fprintf(fp, "%s sctrl = %d\n",  ctime(&currentTime), sctrl);
+        fflush(fp); 
         state_ = STATE_ANALYSIS;
       }
     }
@@ -247,14 +269,21 @@ void HttpData::handleRead() {
       }
       if (static_cast<int>(inBuffer_.size()) < content_length) break;
       sctrl = 5;
+      time_t currentTime = time(NULL);
+      fprintf(fp, "%s sctrl = %d\n",  ctime(&currentTime), sctrl);
+      fflush(fp); 
       state_ = STATE_ANALYSIS;
     }
     if (state_ == STATE_ANALYSIS) {
       AnalysisState flag = this->analysisRequest();
-      fprintf(fp, "flag = %d\n", flag);
+      time_t currentTime = time(NULL);
+      fprintf(fp, "%s flag = %d\n", ctime(&currentTime), flag);
       fflush(fp);
       if (flag == ANALYSIS_SUCCESS) {
         sctrl = 6;
+        currentTime = time(NULL);
+        fprintf(fp, "%s sctrl = %d\n",  ctime(&currentTime), sctrl);
+        fflush(fp); 
         state_ = STATE_FINISH;
         break;
       } else {
@@ -426,6 +455,9 @@ HeaderState HttpData::parseHeaders() {
       case H_START: {
         if (str[i] == '\n' || str[i] == '\r') break;
         hctrl = 0;
+        time_t currentTime = time(NULL);
+        fprintf(fp, "%s hctrl = %d\n",  ctime(&currentTime), hctrl);
+        fflush(fp); 
         hState_ = H_KEY;
         key_start = i;
         now_read_line_begin = i;
@@ -436,6 +468,9 @@ HeaderState HttpData::parseHeaders() {
           key_end = i;
           if (key_end - key_start <= 0) return PARSE_HEADER_ERROR;
           hctrl = 1;
+          time_t currentTime = time(NULL);
+          fprintf(fp, "%s hctrl = %d\n",  ctime(&currentTime), hctrl);
+          fflush(fp); 
           hState_ = H_COLON;
         } else if (str[i] == '\n' || str[i] == '\r')
           return PARSE_HEADER_ERROR;
@@ -444,6 +479,9 @@ HeaderState HttpData::parseHeaders() {
       case H_COLON: {
         if (str[i] == ' ') {
           hctrl = 2;
+          time_t currentTime = time(NULL);
+          fprintf(fp, "%s hctrl = %d\n",  ctime(&currentTime), hctrl);
+          fflush(fp); 
           hState_ = H_SPACES_AFTER_COLON;
         } else
           return PARSE_HEADER_ERROR;
@@ -451,6 +489,9 @@ HeaderState HttpData::parseHeaders() {
       }
       case H_SPACES_AFTER_COLON: {
         hctrl = 3;
+        time_t currentTime = time(NULL);
+        fprintf(fp, "%s hctrl = %d\n",  ctime(&currentTime), hctrl);
+        fflush(fp); 
         hState_ = H_VALUE;
         value_start = i;
         break;
@@ -458,6 +499,9 @@ HeaderState HttpData::parseHeaders() {
       case H_VALUE: {
         if (str[i] == '\r') {
           hctrl = 4;
+          time_t currentTime = time(NULL);
+          fprintf(fp, "%s hctrl = %d\n",  ctime(&currentTime), hctrl);
+          fflush(fp); 
           hState_ = H_CR;
           value_end = i;
           if (value_end - value_start <= 0) return PARSE_HEADER_ERROR;
@@ -468,6 +512,9 @@ HeaderState HttpData::parseHeaders() {
       case H_CR: {
         if (str[i] == '\n') {
           hctrl = 5;
+          time_t currentTime = time(NULL);
+          fprintf(fp, "%s hctrl = %d\n",  ctime(&currentTime), hctrl);
+          fflush(fp); 
           hState_ = H_LF;
           string key(str.begin() + key_start, str.begin() + key_end);
           string value(str.begin() + value_start, str.begin() + value_end);
@@ -633,7 +680,8 @@ void HttpData::handleError(int fd, int err_num, string short_msg) {
 
 void HttpData::handleClose() {
   connectionState_ = H_DISCONNECTED;
-  fprintf(fp, "connectionState_ = %d\n", connectionState_);
+  time_t currentTime = time(NULL); 
+  fprintf(fp, "%s connectionState_ = %d\n",  ctime(&currentTime), connectionState_);
   fflush(fp);
   shared_ptr<HttpData> guard(shared_from_this());
   loop_->removeFromPoller(channel_);

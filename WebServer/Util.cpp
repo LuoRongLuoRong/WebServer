@@ -156,13 +156,13 @@ void handle_for_sigpipe() {
 int setSocketNonBlocking(int fd) {
   int flag = fcntl(fd, F_GETFL, 0);
   FILE* fp = fopen("log.txt", "a");
-  fprintf(fp, "flag = %d\n", flag);
-  fflush(fp);
+  // fprintf(fp, "flag = %d\n", flag);
+  // fflush(fp);
   if (flag == -1) return -1;
 
   flag |= O_NONBLOCK;
-  fprintf(fp, "flag = %d\n", flag);
-  fflush(fp);
+  // fprintf(fp, "flag = %d\n", flag);
+  // fflush(fp);
   if (fcntl(fd, F_SETFL, flag) == -1) return -1;
   return 0;
 }

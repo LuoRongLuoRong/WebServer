@@ -11,7 +11,6 @@
 #include <unordered_map>
 #include "Timer.h"
 
-
 class EventLoop;
 class TimerNode;
 class Channel;
@@ -102,6 +101,8 @@ class HttpData : public std::enable_shared_from_this<HttpData> {
   int nowReadPos_;
   ProcessState state_;
   ParseState hState_;
+  int hctrl;
+  int sctrl;
   bool keepAlive_;
   std::map<std::string, std::string> headers_;
   std::weak_ptr<TimerNode> timer_;
