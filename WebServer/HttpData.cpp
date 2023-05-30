@@ -119,7 +119,9 @@ HttpData::HttpData(EventLoop *loop, int connfd)
       method_(METHOD_GET),
       HTTPVersion_(HTTP_11),
       nowReadPos_(0),
+      sctrl(1),
       state_(STATE_PARSE_URI),
+      hctrl(0),
       hState_(H_START),
       keepAlive_(false) {
   // loop_->queueInLoop(bind(&HttpData::setHandlers, this));
@@ -135,7 +137,9 @@ void HttpData::reset() {
   fileName_.clear();
   path_.clear();
   nowReadPos_ = 0;
+  sctrl = 2;
   state_ = STATE_PARSE_URI;
+  hctrl = 0;
   hState_ = H_START;
   headers_.clear();
   // keepAlive_ = false;
@@ -206,6 +210,7 @@ void HttpData::handleRead() {
         handleError(fd_, 400, "Bad Request");
         break;
       } else {
+        sctrl = 3;
         state_ = STATE_PARSE_HEADERS;
       }
     }
@@ -223,8 +228,10 @@ void HttpData::handleRead() {
       }
       if (method_ == METHOD_POST) {
         // POST方法准备
+        sctrl = 4;
         state_ = STATE_RECV_BODY;
       } else {
+        sctrl = 5;
         state_ = STATE_ANALYSIS;
       }
     }
@@ -239,6 +246,7 @@ void HttpData::handleRead() {
         break;
       }
       if (static_cast<int>(inBuffer_.size()) < content_length) break;
+      sctrl = 5;
       state_ = STATE_ANALYSIS;
     }
     if (state_ == STATE_ANALYSIS) {
@@ -246,6 +254,7 @@ void HttpData::handleRead() {
       fprintf(fp, "flag = %d\n", flag);
       fflush(fp);
       if (flag == ANALYSIS_SUCCESS) {
+        sctrl = 6;
         state_ = STATE_FINISH;
         break;
       } else {
@@ -416,6 +425,7 @@ HeaderState HttpData::parseHeaders() {
     switch (hState_) {
       case H_START: {
         if (str[i] == '\n' || str[i] == '\r') break;
+        hctrl = 0;
         hState_ = H_KEY;
         key_start = i;
         now_read_line_begin = i;
@@ -425,6 +435,7 @@ HeaderState HttpData::parseHeaders() {
         if (str[i] == ':') {
           key_end = i;
           if (key_end - key_start <= 0) return PARSE_HEADER_ERROR;
+          hctrl = 1;
           hState_ = H_COLON;
         } else if (str[i] == '\n' || str[i] == '\r')
           return PARSE_HEADER_ERROR;
@@ -432,18 +443,21 @@ HeaderState HttpData::parseHeaders() {
       }
       case H_COLON: {
         if (str[i] == ' ') {
+          hctrl = 2;
           hState_ = H_SPACES_AFTER_COLON;
         } else
           return PARSE_HEADER_ERROR;
         break;
       }
       case H_SPACES_AFTER_COLON: {
+        hctrl = 3;
         hState_ = H_VALUE;
         value_start = i;
         break;
       }
       case H_VALUE: {
         if (str[i] == '\r') {
+          hctrl = 4;
           hState_ = H_CR;
           value_end = i;
           if (value_end - value_start <= 0) return PARSE_HEADER_ERROR;
@@ -453,6 +467,7 @@ HeaderState HttpData::parseHeaders() {
       }
       case H_CR: {
         if (str[i] == '\n') {
+          hctrl = 5;
           hState_ = H_LF;
           string key(str.begin() + key_start, str.begin() + key_end);
           string value(str.begin() + value_start, str.begin() + value_end);
