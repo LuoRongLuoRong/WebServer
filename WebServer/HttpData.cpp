@@ -129,7 +129,7 @@ HttpData::HttpData(EventLoop *loop, int connfd)
   channel_->setWriteHandler(bind(&HttpData::handleWrite, this));
   channel_->setConnHandler(bind(&HttpData::handleConn, this));
   time_t currentTime = time(NULL); 
-  fprintf(fp, "%s connectionState_ = %d\n",  ctime(&currentTime), connectionState_);
+  fprintf(fp, "%s connectionState_ = %d, state_ = %d\n",  ctime(&currentTime), connectionState_, state_);
   fflush(fp);
 }
 
@@ -138,19 +138,26 @@ void HttpData::reset() {
   fileName_.clear();
   path_.clear();
   nowReadPos_ = 0;
-  sctrl = 2;
+
   time_t currentTime = time(NULL);
   fprintf(fp, "%s sctrl = %d\n",  ctime(&currentTime), sctrl);
-  fflush(fp); 
+  fflush(fp);
+
+  sctrl = 2;
+
+  currentTime = time(NULL);
+  fprintf(fp, "%s sctrl = %d\n",  ctime(&currentTime), sctrl);
+  fflush(fp);
   state_ = STATE_PARSE_URI;
 
   hctrl = 0;
   currentTime = time(NULL);
   fprintf(fp, "%s hctrl = %d\n",  ctime(&currentTime), hctrl);
-  fflush(fp); 
+  fflush(fp);
 
   hState_ = H_START;
   headers_.clear();
+
   // keepAlive_ = false;
   if (timer_.lock()) {
     shared_ptr<TimerNode> my_timer(timer_.lock());
