@@ -536,6 +536,9 @@ HeaderState HttpData::parseHeaders() {
           hState_ = H_END_CR;
         } else {
           key_start = i;
+          time_t currentTime = time(NULL);
+          fprintf(fp, "%s hctrl = %d\n",  ctime(&currentTime), hctrl);
+          fflush(fp); 
           hState_ = H_KEY;
         }
         break;
